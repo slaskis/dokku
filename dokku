@@ -49,7 +49,10 @@ case "$1" in
     APP="$2"; IMAGE="$3"
     pluginhook pre-deploy $APP $IMAGE
 
+    echo "-----> Discovering process types"
     procs=$(cat Procfile | cut -d ':' -f 1)
+    echo "       Procfile declares types -> $(echo $procs | tr "\\n" ",")"
+
     for proc in $procs; do
       if [[ ! -f "$HOME/$APP/PORT_$proc" ]]; then
         # First deploy
