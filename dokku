@@ -53,6 +53,7 @@ case "$1" in
     procfile=$(docker run -i -t $IMAGE /bin/bash -c "cat /app/Procfile")
     procs=$(echo $procfile | cut -d ':' -f 1)
     echo "       Procfile declares types -> $(echo $procs | paste -sd ',')"
+    echo
 
     for proc in $procs; do
       if [[ ! -f "$HOME/$APP/PORT_$proc" ]]; then

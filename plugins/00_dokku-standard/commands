@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e; case "$1" in
   logs)
-    shift 1
-    proc=($1 || 'web')
+    proc=($3 || 'web')
     CONTAINER=$(</home/git/$2/CONTAINER_$proc)
     docker logs $CONTAINER | tail -n 100
     ;;
