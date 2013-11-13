@@ -9,6 +9,6 @@ while read line; do
   NAME=${line%%=*}
   NUM=${line#*=}
   for ((i=1; i<=NUM; i++)); do
-    sudo start dokku-syslog APP=$APP NAME=$NAME SEQ=$i || true # dont fail if already running
+    sudo start dokku-syslog APP=$APP NAME=$NAME SEQ=$i > /dev/null || true # dont fail if already running
   done
 done < $APP_PS
