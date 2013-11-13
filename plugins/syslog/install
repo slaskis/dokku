@@ -16,8 +16,6 @@ respawn limit 10 5
 kill signal KILL
 script
   /usr/bin/logger -t "dokku-syslog" -p local7.info "Started dokku syslog for $APP.$NAME.$SEQ"
-  env | /usr/bin/logger -t "dokku-syslog" -p local7.info
-
   /usr/bin/docker attach "$APP.$NAME.$SEQ" | /usr/bin/logger -t "$APP.$NAME.$SEQ" -p local7.info
 end script
 EOF
