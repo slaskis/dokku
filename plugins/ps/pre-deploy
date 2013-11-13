@@ -47,4 +47,10 @@ while read line; do
   echo "-----> Starting $NAME"
   ps_each start $APP $NAME $NUM
   echo "       $NUM processes up and running"
+
+  # give the apps some time to boot before moving on to nginx
+  # TODO figure out a better way to see when it has started/is listening
+  # while curl -s -I localhost:`docker port $APP.$NAME.1 5000` ?
+  # this is mostly required for really slow apps like anything on ruby...
+  sleep 4
 done < $APP_PS
