@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # add syslog configuration to redirect local7.* to /var/log/dokku.log
 cat<<EOF > /etc/rsyslog.d/25-dokku.conf
 local7.*     /var/log/dokku.log
@@ -21,3 +22,8 @@ script
 end script
 EOF
 initctl reload-configuration
+
+# and allow dokku-syslog to be started by dokku user
+cat<<EOF > /etc/sudoers.d/dokku-syslog
+%dokku ALL=(ALL)NOPASSWD:/sbin/start dokku-syslog *
+EOF
