@@ -1,0 +1,23 @@
+# add syslog configuration to redirect local7.* to /var/log/dokku.log
+cat<<EOF > /etc/rsyslog.d/25-dokku.conf
+local7.*     /var/log/dokku.log
+EOF
+restart rsyslog
+
+# also add `logger -t $APP.$NAME.$SEQ -p local7.info starting` to the upstart script
+cat<<'EOF' > /etc/init/dokku-syslog.conf
+instance $APP.$NAME.$SEQ
+description "Dokku Syslog $APP.$NAME.$SEQ"
+author "Dokku Syslog"
+stop on runlevel [!2345] or stopping dokku-ps INSTANCE=$APP.$NAME.$SEQ
+respawn
+respawn limit 10 5
+kill signal KILL
+script
+  /usr/bin/logger -t "dokku-syslog" -p local7.info "Started dokku syslog for $APP.$NAME.$SEQ"
+  env | /usr/bin/logger -t "dokku-syslog" -p local7.info
+
+  /usr/bin/docker attach "$APP.$NAME.$SEQ" | /usr/bin/logger -t "$APP.$NAME.$SEQ" -p local7.info
+end script
+EOF
+initctl reload-configuration
