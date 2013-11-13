@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
+
 # add syslog configuration to redirect local7.* to /var/log/dokku.log
 cat<<EOF > /etc/rsyslog.d/25-dokku.conf
 local7.*     /var/log/dokku.log
 EOF
 restart rsyslog
+
+# make sure we don't fill up the server with logs by rotating them
+cat<<EOF > /etc/logrotate.d/dokku-syslog
+/var/log/dokku.log
+{
+  rotate 7
+  daily
+  missingok
+  notifempty
+  delaycompress
+  compress
+  postrotate
+    reload rsyslog >/dev/null 2>&1 || true
+  endscript
+}
+EOF
+
 
 # also add `logger -t $APP.$NAME.$SEQ -p local7.info starting` to the upstart script
 cat<<'EOF' > /etc/init/dokku-syslog.conf
