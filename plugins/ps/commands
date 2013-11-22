@@ -27,7 +27,7 @@ function ps_list(){
   APP_PS="$APP_ROOT/PS"
 
   echo
-  ps_proc_list $APP | while read i; do
+  while read i; do
     NAME=$(cut -d":" -f1 <<< "$i")
     CMD=$(cut -d":" -f2 <<< "$i")
     echo "=== $NAME: \`${CMD/ /}\`"
@@ -37,7 +37,7 @@ function ps_list(){
         ps_status $APP $NAME $i
       done
     done
-  done
+  done < <(ps_proc_list $APP)
   echo
 }
 
@@ -54,7 +54,7 @@ function ps_scale(){
   echo -n > $TMP_PS
 
   # get the list of available procs (according to Procfile)
-  ps_proc_list $APP | while read i; do
+  while read i; do
     NAME=$(cut -d":" -f1 <<< "$i")
 
     # a variable to check if it was found
@@ -79,7 +79,7 @@ function ps_scale(){
     if [ -z "$found" ]; then
       grep "^$NAME=" "$APP_PS" >> $TMP_PS || echo "$NAME=0" >> $TMP_PS
     fi
-  done
+  done < <(ps_proc_list $APP)
 
   # replace the current with the tmp one
   mv "$TMP_PS" "$APP_PS"
@@ -88,30 +88,23 @@ function ps_scale(){
   dokku deploy $APP app/$APP
 }
 
-function ps_stop(){
+function ps_start(){
   APP="$1"; NAME="$2";
   APP_ROOT="$DOKKU_ROOT/$APP"
   APP_PS="$APP_ROOT/PS"
 
-  # require name
+  # default to all procs
   if [ -z "$NAME" ]; then
-    echo "Missing PROC for \"$APP\""
-    exit 1
+    NAME=$(ps_proc_list $APP | cut -d":" -f1) || {
+      echo "App \"$APP\" has no processes to restart" >&2
+      exit 1
+    }
   fi
 
-  grep "^$NAME=" $APP_PS || true | while read line; do
-    ps_each stop $APP ${line%%=*} ${line#*=}
-  done
+  while read line; do
+    ps_each start $APP ${line%%=*} ${line#*=}
+  done < <(grep "^$NAME=" $APP_PS)
 }
-
-function ps_status(){
-  APP="$1"; NAME="$2"; SEQ="$3";
-  # formatting is based on
-  # https://github.com/dotcloud/docker/blob/b038b0cd44e152fa4158f2bfe145de6d774dd8d0/state.go#L20
-  STATUS=$(docker ps -a | grep "$APP.$NAME.$SEQ" | grep -Eo '(Up [0-9]+ [a-z]+|Ghost|Exit [0-9]+)')
-  echo "$NAME.$SEQ: $STATUS"
-}
-
 function ps_restart(){
   APP="$1"; NAME="$2";
   APP_ROOT="$DOKKU_ROOT/$APP"
@@ -125,10 +118,34 @@ function ps_restart(){
     }
   fi
 
-  grep "^$NAME=" $APP_PS || true | while read line; do
+  while read line; do
     ps_each restart $APP ${line%%=*} ${line#*=}
-  done
+  done < <(grep "^$NAME=" $APP_PS)
 }
+function ps_stop(){
+  APP="$1"; NAME="$2";
+  APP_ROOT="$DOKKU_ROOT/$APP"
+  APP_PS="$APP_ROOT/PS"
+
+  # require name
+  if [ -z "$NAME" ]; then
+    echo "Missing PROC for \"$APP\""
+    exit 1
+  fi
+
+  while read line; do
+    ps_each stop $APP ${line%%=*} ${line#*=}
+  done < <(grep "^$NAME=" $APP_PS)
+}
+
+function ps_status(){
+  APP="$1"; NAME="$2"; SEQ="$3";
+  # formatting is based on
+  # https://github.com/dotcloud/docker/blob/b038b0cd44e152fa4158f2bfe145de6d774dd8d0/state.go#L20
+  STATUS=$(docker ps -a | grep "$APP.$NAME.$SEQ" | grep -Eo '(Up [0-9]+ [a-z]+|Ghost|Exit [0-9]+)')
+  echo "$NAME.$SEQ: $STATUS"
+}
+
 
 function ps_each(){
   CMD="$1"; APP="$2"; NAME="$3"; NUM="$4"
@@ -152,6 +169,7 @@ function ps_usage(){
     ps <app>                                        List processes for an app
     ps:restart <app> [PROC]                         Restart an app process
     ps:scale <app> PROC1=NUM1 [PROC2=NUM2...]       Scale processes by the given amount
+    ps:start <app> PROC                             Start an app process(es)
     ps:stop <app> PROC                              Stop an app process
 
 EOF
@@ -182,6 +200,7 @@ fi
 case "$1" in
   ps) ps_list $APP; exit ;;
   ps:scale) shift 2; ps_scale $APP "$@"; exit ;;
+  ps:start) shift 2; ps_start $APP $1; exit ;;
   ps:restart) shift 2; ps_restart $APP $1; exit ;;
   ps:stop) shift 2; ps_stop $APP $1; exit ;;
   help) ps_usage ;;
