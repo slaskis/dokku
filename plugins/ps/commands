@@ -101,7 +101,11 @@ function ps_start(){
   fi
 
   while read line; do
-    ps_each start $APP ${line%%=*} ${line#*=}
+    NAME="${line%%=*}"
+    NUM="${line#*=}"
+    pluginhook pre-ps-start $APP $NAME $NUM
+    ps_each start $APP $NAME $NUM
+    pluginhook post-ps-start $APP $NAME $NUM
   done < <(grep "^$NAME=" $APP_PS)
 }
 function ps_restart(){

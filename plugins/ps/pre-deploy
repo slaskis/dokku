@@ -45,7 +45,9 @@ while read line; do
   done
 
   echo "-----> Starting $NAME"
+  pluginhook pre-ps-start $APP $NAME $NUM
   ps_each start $APP $NAME $NUM
+  pluginhook post-ps-start $APP $NAME $NUM
   echo "       $NUM processes up and running"
 
   # give the apps some time to boot before moving on to nginx
