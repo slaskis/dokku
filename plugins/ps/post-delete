@@ -8,6 +8,6 @@ if [[ -n "$APP" ]]; then
     echo "Stopping $line"
     NAME=$(cut -d"." -f2 <<< "$line")
     SEQ=$(cut -d"." -f3 <<< "$line")
-    sudo stop dokku-ps APP="$APP" NAME="$NAME" SEQ="$SEQ"
+    sudo stop dokku-ps APP="$APP" NAME="$NAME" SEQ="$SEQ" || true
   done <<< "$procs"
 fi

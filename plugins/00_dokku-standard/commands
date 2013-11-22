@@ -15,9 +15,9 @@ case "$1" in
     pluginhook pre-delete $APP
     ID=$(< "$DOKKU_ROOT/$APP/CONTAINER")
 
-    docker stop $ID > /dev/null
+    docker stop $ID > /dev/null || true
     docker images | grep $IMAGE | awk '{print $3}' | xargs docker rmi &> /dev/null &
-    docker rm $ID  > /dev/null
+    docker rm $ID  > /dev/null || true
 
     pluginhook post-delete $APP
     ;;
@@ -32,7 +32,7 @@ case "$1" in
         echo "App $APP does not exist"
         exit 1
     fi
-      
+
     CONTAINER=$(<$DOKKU_ROOT/$APP/CONTAINER)
     docker logs $CONTAINER | tail -n 100
     if [[ $3 == "-t" ]]; then
