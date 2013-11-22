@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# attach the container(s) to logger
+set -eo pipefail
+APP="$1"; NAME="$2"; NUM="$3"
+APP_ROOT="$DOKKU_ROOT/$APP"
+APP_PS="$APP_ROOT/PS"
+
+for ((i=1; i<=NUM; i++)); do
+  sudo start dokku-syslog APP=$APP NAME=$NAME SEQ=$i > /dev/null || true # dont fail if already running
+done
